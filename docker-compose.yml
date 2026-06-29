@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: watchstore-web
+    ports:
+      - "8082:80"  # Changed from 8080 to 8082
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - db
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=watchstore
+      - MYSQL_USER=watchuser
+      - MYSQL_PASSWORD=watchpass
+    networks:
+      - watchstore-network
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: watchstore-db
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpass
+      - MYSQL_DATABASE=watchstore
+      - MYSQL_USER=watchuser
+      - MYSQL_PASSWORD=watchpass
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./src/sql:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - watchstore-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpass"]
+      timeout: 20s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: watchstore-phpmyadmin
+    ports:
+      - "8083:80"  # Changed from 8081 to 8083
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+      - PMA_ARBITRARY=1
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - watchstore-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  watchstore-network:
+    driver: overlay
+    name: watchstore-network
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
