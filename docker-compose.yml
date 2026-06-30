@@ -52,7 +52,7 @@ services:
       - PMA_ARBITRARY=1
     depends_on:
      - db:
-        condition: service_healthy
+         condition: service_healthy
     networks:
       - watchstore-network
     restart: unless-stopped
