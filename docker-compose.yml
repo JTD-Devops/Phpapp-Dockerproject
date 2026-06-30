@@ -2,14 +2,11 @@ version: '3.8'
 
 services:
   web:
-    build: .
-    container_name: watchstore-web
+    image: devikadockhub/phpapp:phpimg 
     ports:
       - "8082:80"
     volumes:
-      - ./src:/var/www/html
-    depends_on:
-      - db
+      - web_data:/var/www/html
     environment:
       - MYSQL_HOST=db
       - MYSQL_DATABASE=watchstore
@@ -17,7 +14,6 @@ services:
       - MYSQL_PASSWORD=watchpass
     networks:
       - watchstore-network
-    restart: unless-stopped
     deploy:
       replicas: 1
       update_config:
@@ -28,7 +24,6 @@ services:
 
   db:
     image: mysql:8.0
-    container_name: watchstore-db
     ports:
       - "3307:3306"
     environment:
@@ -38,11 +33,9 @@ services:
       - MYSQL_PASSWORD=watchpass
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./src/sql:/docker-entrypoint-initdb.d
     command: --default-authentication-plugin=mysql_native_password
     networks:
       - watchstore-network
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpass"]
       timeout: 20s
@@ -54,18 +47,14 @@ services:
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: watchstore-phpmyadmin
     ports:
       - "8083:80"
     environment:
       - PMA_HOST=db
       - PMA_PORT=3306
       - PMA_ARBITRARY=1
-    depends_on:
-      - db
     networks:
       - watchstore-network
-    restart: unless-stopped
     deploy:
       placement:
         constraints:
@@ -73,6 +62,8 @@ services:
 
 volumes:
   mysql_data:
+    driver: local
+  web_data:
     driver: local
 
 networks:
