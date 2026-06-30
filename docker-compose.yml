@@ -51,7 +51,7 @@ services:
       - PMA_PORT=3306
       - PMA_ARBITRARY=1
     depends_on:
-      db:
+     - db:
         condition: service_healthy
     networks:
       - watchstore-network
